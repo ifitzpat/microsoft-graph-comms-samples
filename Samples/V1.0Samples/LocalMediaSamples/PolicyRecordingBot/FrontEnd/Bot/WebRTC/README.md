@@ -52,48 +52,44 @@ mediaBridge.Dispose();
 
 **File:** `AudioConverter.cs`
 
-Handles audio format conversion between PCM and Opus.
+Handles audio format conversion between PCM and Opus using the Concentus library.
 
 **Audio Formats:**
 - **PCM**: 16-bit, 16kHz, mono, 640 bytes/frame (20ms)
-- **Opus**: Variable bitrate, optimized for VoIP
+- **Opus**: 24kbps bitrate, VOIP application, SILK mode for voice
 
 **Current Status:**
-⚠️ **Placeholder Implementation** - Currently passes audio through without conversion.
+✅ **COMPLETE** - Full Opus codec implementation using Concentus v2.1.1
 
-**TODO:** Add Concentus.Opus NuGet package for actual encoding/decoding:
-```xml
-<PackageReference Include="Concentus.Opus" Version="2.0.0" />
-```
+**Implementation Details:**
+- Uses Concentus library (pure C# Opus implementation)
+- Encoder configured for optimal voice quality:
+  - Bitrate: 24 kbps
+  - Complexity: 10 (maximum quality)
+  - Signal type: VOICE
+  - Mode: SILK-only (optimized for voice)
+- Decoder supports Forward Error Correction (FEC)
+- Error handling for invalid Opus frames
 
-**Full Implementation:**
+**Usage:**
 ```csharp
-using Concentus.Structs;
+var converter = new AudioConverter(logger);
 
-private OpusEncoder encoder;
-private OpusDecoder decoder;
+// Teams → WebRTC: Convert PCM to Opus
+byte[] pcmData = new byte[640]; // 20ms @ 16kHz mono
+byte[] opusData = converter.ConvertPcmToOpus(pcmData);
 
-public AudioConverter(IGraphLogger logger)
-{
-    this.encoder = new OpusEncoder(SampleRate, Channels, OpusApplication.Voip);
-    this.decoder = new OpusDecoder(SampleRate, Channels);
-}
+// WebRTC → Teams: Convert Opus to PCM
+byte[] receivedOpus = new byte[120]; // Typical Opus frame
+byte[] decodedPcm = converter.ConvertOpusToPcm(receivedOpus);
 
-public byte[] ConvertPcmToOpus(byte[] pcmData)
-{
-    short[] pcmSamples = new short[pcmData.Length / 2];
-    Buffer.BlockCopy(pcmData, 0, pcmSamples, 0, pcmData.Length);
-
-    byte[] opusData = new byte[4000];
-    int encodedLength = this.encoder.Encode(
-        pcmSamples, 0, FrameSizeSamples,
-        opusData, 0, opusData.Length);
-
-    byte[] result = new byte[encodedLength];
-    Buffer.BlockCopy(opusData, 0, result, 0, encodedLength);
-    return result;
-}
+// Cleanup
+converter.Dispose();
 ```
+
+**Dependencies:**
+- Concentus v2.1.1 (pure C# Opus codec)
+- No native dependencies required
 
 ---
 
@@ -223,30 +219,32 @@ dotnet test --filter "FullyQualifiedName~MediaBridgeTests"
 
 ## Next Steps
 
-1. **Add Opus codec support:**
-   ```bash
-   dotnet add package Concentus.Opus --version 2.0.0
-   ```
-   Then implement actual encoding/decoding in AudioConverter.cs
+1. ✅ **Opus codec support** - COMPLETED
+   - Concentus v2.1.1 integrated
+   - Full encoding/decoding implemented
 
-2. **Implement WebRTCManager:**
-   - Create `WebRTCManager.cs` implementing `IWebRTCManager`
-   - Use SIPSorcery library for WebRTC stack
-   - Handle ICE, DTLS, SRTP
+2. ✅ **WebRTCManager** - COMPLETED
+   - Implemented using SIPSorcery v6.0.12
+   - Handles ICE, DTLS, SRTP, peer connections
+   - See `WEBRTC_IMPLEMENTATION.md` for details
 
-3. **Implement SignalingClient:**
-   - WebSocket connection to signaling server
+3. ✅ **SignalingClient** - COMPLETED
+   - WebSocket connection to Python signaling server
    - SDP offer/answer exchange
    - ICE candidate forwarding
+   - See `../Signaling/SIGNALING_CLIENT_IMPLEMENTATION.md`
 
-4. **Modify BotMediaStream:**
+4. **Modify BotMediaStream:** (NEXT PHASE)
    - Add `SendAudioToTeams(byte[] pcmData)` method
-   - Integrate MediaBridge initialization
-   - Forward received audio to MediaBridge
+   - Integrate MediaBridge initialization in CallHandler
+   - Forward received audio from Teams to MediaBridge
+   - Wire up WebRTC→Teams audio path
 
-5. **Enable remaining tests:**
-   - Remove `[Ignore]` from WebRTC→Teams audio test
-   - Run integration test end-to-end
+5. **Integration Testing:**
+   - Start Python signaling server
+   - Test end-to-end WebRTC negotiation
+   - Verify bidirectional audio flow
+   - Remove `[Ignore]` from integration tests
 
 ---
 

@@ -6,6 +6,8 @@
 namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
 {
     using System;
+    using Concentus.Enums;
+    using Concentus.Structs;
     using Microsoft.Graph.Communications.Common;
     using Microsoft.Graph.Communications.Common.Telemetry;
 
@@ -23,9 +25,9 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
 
         private readonly IGraphLogger logger;
 
-        // Opus encoder/decoder (placeholder - requires Concentus.Opus NuGet package)
-        // private OpusEncoder encoder;
-        // private OpusDecoder decoder;
+        // Opus encoder/decoder using Concentus library
+        private readonly OpusEncoder encoder;
+        private readonly OpusDecoder decoder;
         private bool disposed = false;
 
         /// <summary>
@@ -38,11 +40,18 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
 
             this.logger = logger;
 
-            // TODO: Initialize Opus encoder/decoder when Concentus.Opus is added
-            // this.encoder = new OpusEncoder(SampleRate, Channels, OpusApplication.Voip);
-            // this.decoder = new OpusDecoder(SampleRate, Channels);
+            // Initialize Opus encoder/decoder
+            // Using VOIP application for low latency and voice optimization
+            this.encoder = OpusEncoder.Create(SampleRate, Channels, OpusApplication.OPUS_APPLICATION_VOIP);
+            this.decoder = OpusDecoder.Create(SampleRate, Channels);
 
-            this.logger.Info("AudioConverter initialized (Opus support pending - add Concentus.Opus package)");
+            // Configure encoder for optimal voice quality
+            this.encoder.Bitrate = 24000; // 24 kbps - good quality for voice
+            this.encoder.Complexity = 10; // Max complexity for best quality
+            this.encoder.SignalType = OpusSignal.OPUS_SIGNAL_VOICE;
+            this.encoder.ForceMode = OpusMode.MODE_SILK_ONLY; // SILK for voice
+
+            this.logger.Info("AudioConverter initialized with Opus codec (16kHz, mono, 24kbps)");
         }
 
         /// <summary>
@@ -61,25 +70,26 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
 
             try
             {
-                // TODO: Implement actual Opus encoding when Concentus.Opus is added
-                //
-                // Convert byte array to short array
-                // short[] pcmSamples = new short[pcmData.Length / 2];
-                // Buffer.BlockCopy(pcmData, 0, pcmSamples, 0, pcmData.Length);
-                //
-                // Encode to Opus
-                // byte[] opusData = new byte[4000]; // Max Opus frame size
-                // int encodedLength = this.encoder.Encode(pcmSamples, 0, FrameSizeSamples, opusData, 0, opusData.Length);
-                //
-                // Resize to actual encoded length
-                // byte[] result = new byte[encodedLength];
-                // Buffer.BlockCopy(opusData, 0, result, 0, encodedLength);
-                // return result;
+                // Convert byte array to short array (16-bit PCM samples)
+                short[] pcmSamples = new short[pcmData.Length / 2];
+                Buffer.BlockCopy(pcmData, 0, pcmSamples, 0, pcmData.Length);
 
-                // PLACEHOLDER: For now, return the PCM data as-is
-                // This allows testing the MediaBridge flow without Opus dependency
-                this.logger.Verbose($"Converting {pcmData.Length} bytes PCM to Opus (placeholder - returns PCM)");
-                return pcmData;
+                // Encode to Opus
+                byte[] opusData = new byte[4000]; // Max Opus frame size
+                int encodedLength = this.encoder.Encode(pcmSamples, 0, FrameSizeSamples, opusData, 0, opusData.Length);
+
+                if (encodedLength < 0)
+                {
+                    this.logger.Error($"Opus encoding failed with error code: {encodedLength}");
+                    throw new InvalidOperationException($"Opus encoding failed with error code: {encodedLength}");
+                }
+
+                // Resize to actual encoded length
+                byte[] result = new byte[encodedLength];
+                Buffer.BlockCopy(opusData, 0, result, 0, encodedLength);
+
+                this.logger.Verbose($"Encoded {pcmData.Length} bytes PCM to {result.Length} bytes Opus");
+                return result;
             }
             catch (Exception ex)
             {
@@ -99,20 +109,22 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
 
             try
             {
-                // TODO: Implement actual Opus decoding when Concentus.Opus is added
-                //
                 // Decode Opus frame
-                // short[] pcmSamples = new short[FrameSizeSamples * 2]; // Allow for FEC
-                // int decodedSamples = this.decoder.Decode(opusData, 0, opusData.Length, pcmSamples, 0, FrameSizeSamples, false);
-                //
-                // Convert to byte array
-                // byte[] pcmData = new byte[decodedSamples * 2];
-                // Buffer.BlockCopy(pcmSamples, 0, pcmData, 0, pcmData.Length);
-                // return pcmData;
+                short[] pcmSamples = new short[FrameSizeSamples * 2]; // Allow for FEC (Forward Error Correction)
+                int decodedSamples = this.decoder.Decode(opusData, 0, opusData.Length, pcmSamples, 0, FrameSizeSamples, false);
 
-                // PLACEHOLDER: For now, return the Opus data as-is (assuming it's actually PCM in tests)
-                this.logger.Verbose($"Converting {opusData.Length} bytes Opus to PCM (placeholder - returns as-is)");
-                return opusData;
+                if (decodedSamples < 0)
+                {
+                    this.logger.Error($"Opus decoding failed with error code: {decodedSamples}");
+                    throw new InvalidOperationException($"Opus decoding failed with error code: {decodedSamples}");
+                }
+
+                // Convert to byte array (16-bit PCM)
+                byte[] pcmData = new byte[decodedSamples * 2];
+                Buffer.BlockCopy(pcmSamples, 0, pcmData, 0, pcmData.Length);
+
+                this.logger.Verbose($"Decoded {opusData.Length} bytes Opus to {pcmData.Length} bytes PCM");
+                return pcmData;
             }
             catch (Exception ex)
             {
@@ -140,10 +152,8 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
             {
                 if (disposing)
                 {
-                    // TODO: Dispose Opus encoder/decoder when implemented
-                    // this.encoder?.Dispose();
-                    // this.decoder?.Dispose();
-
+                    // Note: OpusEncoder and OpusDecoder are structs in Concentus
+                    // and don't implement IDisposable, so no cleanup needed
                     this.logger.Info("AudioConverter disposed");
                 }
 

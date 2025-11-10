@@ -65,6 +65,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Concentus" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Owin" Version="5.3.0" />
     <PackageReference Include="Microsoft.Graph.Communications.Calls.Media" Version="1.2.0.3742" />
     <PackageReference Include="Microsoft.Owin.Hosting" Version="4.2.0" />
