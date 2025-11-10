@@ -43,6 +43,8 @@
     <Compile Include="Bot\WebRTC\WebRTCManager.cs" />
     <Compile Include="Bot\WebRTC\IAudioConverter.cs" />
     <Compile Include="Bot\WebRTC\AudioFrame.cs" />
+    <Compile Include="Signaling\ISignalingClient.cs" />
+    <Compile Include="Signaling\SignalingClient.cs" />
     <Compile Include="Http\ExceptionLogger.cs" />
     <Compile Include="SampleConstants.cs" />
     <Compile Include="Http\Controllers\DemoController.cs" />
