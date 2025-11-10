@@ -40,6 +40,7 @@
     <Compile Include="Bot\WebRTC\MediaBridge.cs" />
     <Compile Include="Bot\WebRTC\AudioConverter.cs" />
     <Compile Include="Bot\WebRTC\IWebRTCManager.cs" />
+    <Compile Include="Bot\WebRTC\WebRTCManager.cs" />
     <Compile Include="Bot\WebRTC\IAudioConverter.cs" />
     <Compile Include="Bot\WebRTC\AudioFrame.cs" />
     <Compile Include="Http\ExceptionLogger.cs" />
@@ -67,6 +68,7 @@
     <PackageReference Include="Microsoft.Owin.Hosting" Version="4.2.0" />
     <PackageReference Include="Microsoft.Skype.Bots.Media" Version="1.20.0.348-alpha" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SIPSorcery" Version="6.0.12" />
     <Reference Include="System.Data.Entity" />
   </ItemGroup>
   <ItemGroup>
