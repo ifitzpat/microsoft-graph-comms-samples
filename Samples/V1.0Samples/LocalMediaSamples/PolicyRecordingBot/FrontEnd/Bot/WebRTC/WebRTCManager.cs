@@ -12,6 +12,8 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Graph.Communications.Common.Telemetry;
+    using Newtonsoft.Json;
+    using Sample.PolicyRecordingBot.FrontEnd.Signaling;
     using SIPSorcery.Net;
     using SIPSorceryMedia.Abstractions;
 
@@ -22,6 +24,7 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
     public class WebRTCManager : IWebRTCManager, IDisposable
     {
         private readonly IGraphLogger logger;
+        private readonly ISignalingClient signalingClient;
         private readonly string turnServerUrl;
         private readonly string turnUsername;
         private readonly string turnPassword;
@@ -45,16 +48,19 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
         /// Initializes a new instance of the <see cref="WebRTCManager"/> class.
         /// </summary>
         /// <param name="logger">Graph logger for telemetry.</param>
+        /// <param name="signalingClient">Signaling client for SDP/ICE exchange.</param>
         /// <param name="turnServerUrl">TURN server URL (e.g., turn:server.com:3478).</param>
         /// <param name="turnUsername">TURN server username.</param>
         /// <param name="turnPassword">TURN server password.</param>
         public WebRTCManager(
             IGraphLogger logger,
+            ISignalingClient signalingClient,
             string turnServerUrl,
             string turnUsername,
             string turnPassword)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.signalingClient = signalingClient ?? throw new ArgumentNullException(nameof(signalingClient));
             this.turnServerUrl = turnServerUrl;
             this.turnUsername = turnUsername;
             this.turnPassword = turnPassword;
@@ -62,6 +68,10 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
             this.peerConnections = new ConcurrentDictionary<string, RTCPeerConnection>();
             this.connectionLock = new SemaphoreSlim(1, 1);
             this.cancellationTokenSource = new CancellationTokenSource();
+
+            // Wire up signaling events
+            this.signalingClient.OnAnswerReceived += this.OnAnswerReceivedAsync;
+            this.signalingClient.OnIceCandidateReceived += this.OnRemoteIceCandidateReceivedAsync;
 
             this.logger.Info($"WebRTCManager initialized with TURN server: {turnServerUrl}");
         }
@@ -140,9 +150,8 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
                 this.logger.Info($"WebRTC connection created for call {callId}, SDP offer ready");
                 this.logger.Verbose($"SDP Offer: {offer.sdp}");
 
-                // TODO: Send offer via SignalingClient
-                // This will be wired up when SignalingClient is implemented
-                // await this.signalingClient.SendOfferAsync(callId, offer.sdp);
+                // Send offer via SignalingClient
+                await this.signalingClient.SendOfferAsync(callId, offer.sdp);
 
                 this.reconnectAttempts = 0;
                 return true;
@@ -244,9 +253,9 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
         /// Handles remote ICE candidate from signaling server.
         /// </summary>
         /// <param name="callId">The call identifier.</param>
-        /// <param name="candidateInit">The ICE candidate.</param>
+        /// <param name="candidateJson">The ICE candidate as JSON string.</param>
         /// <returns>Task representing the async operation.</returns>
-        public async Task OnIceCandidateReceivedAsync(string callId, RTCIceCandidateInit candidateInit)
+        private async Task OnRemoteIceCandidateReceivedAsync(string callId, string candidateJson)
         {
             if (!this.peerConnections.TryGetValue(callId, out var pc))
             {
@@ -256,7 +265,17 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
 
             try
             {
-                this.logger.Verbose($"Adding ICE candidate for call {callId}: {candidateInit.candidate}");
+                this.logger.Verbose($"Adding ICE candidate for call {callId}");
+
+                // Parse candidate JSON
+                var candidateObj = JsonConvert.DeserializeObject<dynamic>(candidateJson);
+                var candidateInit = new RTCIceCandidateInit
+                {
+                    candidate = candidateObj.candidate,
+                    sdpMid = candidateObj.sdpMid,
+                    sdpMLineIndex = (ushort)(candidateObj.sdpMLineIndex ?? 0),
+                };
+
                 await pc.addIceCandidate(candidateInit);
             }
             catch (Exception ex)
@@ -298,8 +317,15 @@ namespace Sample.PolicyRecordingBot.FrontEnd.Bot.WebRTC
             {
                 this.logger.Verbose($"ICE candidate generated for call {callId}: {candidate.candidate}");
 
-                // TODO: Send candidate via SignalingClient
-                // await this.signalingClient.SendIceCandidateAsync(callId, candidate);
+                // Send candidate via SignalingClient
+                var candidateInit = new
+                {
+                    candidate = candidate.candidate,
+                    sdpMid = candidate.sdpMid,
+                    sdpMLineIndex = candidate.sdpMLineIndex,
+                };
+                string candidateJson = JsonConvert.SerializeObject(candidateInit);
+                Task.Run(async () => await this.signalingClient.SendIceCandidateAsync(callId, candidateJson));
             }
             else
             {

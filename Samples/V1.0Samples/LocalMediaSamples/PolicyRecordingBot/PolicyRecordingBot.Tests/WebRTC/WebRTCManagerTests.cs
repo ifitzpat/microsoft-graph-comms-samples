@@ -10,6 +10,7 @@ namespace Sample.PolicyRecordingBot.Tests.WebRTC
     using FluentAssertions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using Sample.PolicyRecordingBot.FrontEnd.Signaling;
     using Sample.PolicyRecordingBot.Tests.Helpers;
 
     /// <summary>
@@ -20,13 +21,13 @@ namespace Sample.PolicyRecordingBot.Tests.WebRTC
     public class WebRTCManagerTests
     {
         private TestLogger logger;
-        private Mock<object> mockSignalingClient; // Will be ISignalingClient
+        private Mock<ISignalingClient> mockSignalingClient;
 
         [TestInitialize]
         public void Setup()
         {
             this.logger = new TestLogger("WebRTCManagerTests");
-            this.mockSignalingClient = new Mock<object>();
+            this.mockSignalingClient = new Mock<ISignalingClient>();
         }
 
         [TestCleanup]
