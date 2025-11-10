@@ -37,6 +37,11 @@
     <Compile Include="Bot\BotMediaStream.cs" />
     <Compile Include="Bot\CallHandler.cs" />
     <Compile Include="Bot\ExceptionExtensions.cs" />
+    <Compile Include="Bot\WebRTC\MediaBridge.cs" />
+    <Compile Include="Bot\WebRTC\AudioConverter.cs" />
+    <Compile Include="Bot\WebRTC\IWebRTCManager.cs" />
+    <Compile Include="Bot\WebRTC\IAudioConverter.cs" />
+    <Compile Include="Bot\WebRTC\AudioFrame.cs" />
     <Compile Include="Http\ExceptionLogger.cs" />
     <Compile Include="SampleConstants.cs" />
     <Compile Include="Http\Controllers\DemoController.cs" />
