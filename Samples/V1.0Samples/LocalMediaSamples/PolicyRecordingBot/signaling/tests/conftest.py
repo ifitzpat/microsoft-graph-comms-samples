@@ -12,6 +12,7 @@ import json
 import pytest
 import websockets
 from typing import AsyncGenerator, List, Dict, Any
+from src.signaling_server import SignalingServer
 
 
 @pytest.fixture
@@ -26,6 +27,27 @@ def event_loop():
 async def test_server_port() -> int:
     """Provides a free port for test server."""
     return 8766  # Different from production (8765)
+
+
+@pytest.fixture
+async def test_server(test_server_port) -> AsyncGenerator[SignalingServer, None]:
+    """Starts a test signaling server instance."""
+    server = SignalingServer(host="127.0.0.1", port=test_server_port)
+
+    # Start server in background task
+    server_task = asyncio.create_task(server.start())
+
+    # Give server time to start
+    await asyncio.sleep(0.2)
+
+    yield server
+
+    # Cleanup: cancel server task
+    server_task.cancel()
+    try:
+        await server_task
+    except asyncio.CancelledError:
+        pass
 
 
 @pytest.fixture
@@ -119,7 +141,7 @@ class TestWebSocketClient:
 
 
 @pytest.fixture
-async def websocket_client(test_server_port) -> AsyncGenerator[TestWebSocketClient, None]:
+async def websocket_client(test_server, test_server_port) -> AsyncGenerator[TestWebSocketClient, None]:
     """Provides a test WebSocket client."""
     client = TestWebSocketClient(f"ws://localhost:{test_server_port}")
     await client.connect()
@@ -128,7 +150,7 @@ async def websocket_client(test_server_port) -> AsyncGenerator[TestWebSocketClie
 
 
 @pytest.fixture
-async def two_websocket_clients(test_server_port) -> AsyncGenerator[tuple, None]:
+async def two_websocket_clients(test_server, test_server_port) -> AsyncGenerator[tuple, None]:
     """Provides two connected WebSocket clients for multi-client tests."""
     client1 = TestWebSocketClient(f"ws://localhost:{test_server_port}")
     client2 = TestWebSocketClient(f"ws://localhost:{test_server_port}")

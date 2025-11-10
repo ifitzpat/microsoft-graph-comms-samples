@@ -188,7 +188,7 @@ class TestCallIsolation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_messages_isolated_by_call_id(self, test_server_port):
+    async def test_messages_isolated_by_call_id(self, test_server, test_server_port):
         """
         TDD: Messages for call A should not reach clients in call B.
 
@@ -286,6 +286,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_client_disconnect_does_not_affect_other_clients(
         self,
+        test_server,
         test_server_port
     ):
         """
@@ -347,7 +348,3 @@ class TestPerformance:
 
         # Should receive at least 90% (allow for some timing issues)
         assert received_count >= num_messages * 0.9
-
-
-# Mark all tests to be skipped until signaling server is implemented
-pytestmark = pytest.mark.skip("TDD: Implement signaling server first (src/signaling_server.py)")
