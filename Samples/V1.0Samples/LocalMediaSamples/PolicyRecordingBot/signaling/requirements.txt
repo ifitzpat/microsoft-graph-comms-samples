@@ -1,0 +1,24 @@
+# Python Signaling Server Dependencies
+
+# WebSocket support
+websockets==12.0
+
+# Async HTTP client (for testing and health checks)
+aiohttp==3.9.1
+
+# JSON handling (built-in, but specifying for clarity)
+# No additional package needed for basic JSON
+
+# Testing dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-timeout==2.2.0
+
+# Code quality
+black==23.12.1
+flake8==6.1.0
+mypy==1.7.1
+
+# Optional: For mock WebSocket server in tests
+pytest-mock==3.12.0

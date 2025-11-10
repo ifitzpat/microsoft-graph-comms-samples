@@ -1,0 +1,14 @@
+# Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+# Development tools
+ipython==8.18.1
+ipdb==0.13.13
+
+# Testing
+pytest-watch==4.2.0  # Auto-run tests on file changes
+
+# Documentation
+sphinx==7.2.6

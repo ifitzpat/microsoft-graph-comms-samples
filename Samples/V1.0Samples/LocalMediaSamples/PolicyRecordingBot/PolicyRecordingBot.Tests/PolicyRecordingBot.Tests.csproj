@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\..\Graph.props" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A5E8D2F1-8B3C-4D7E-9F2A-1C6B5E4D3A2F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Sample.PolicyRecordingBot.Tests</RootNamespace>
+    <AssemblyName>Sample.PolicyRecordingBot.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Test Framework -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+
+    <!-- Mocking and Assertions -->
+    <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+
+    <!-- Code Coverage -->
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Project References -->
+    <ProjectReference Include="..\FrontEnd\CRFrontEnd.csproj">
+      <Project>{739D09C4-47E8-42B7-9B89-94DCB890AC0F}</Project>
+      <Name>CRFrontEnd</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Common\Sample.Common\Sample.Common.csproj">
+      <Project>{88b67fbe-6de8-4dc3-83cf-9f6b4ea10138}</Project>
+      <Name>Sample.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Test Files (will be added as we create them) -->
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Helpers\TestLogger.cs" />
+    <Compile Include="Helpers\MockMediaFactory.cs" />
+    <Compile Include="Bot\BotMediaStreamTests.cs" />
+    <Compile Include="Bot\CallHandlerTests.cs" />
+    <Compile Include="WebRTC\MediaBridgeTests.cs" />
+    <Compile Include="WebRTC\WebRTCManagerTests.cs" />
+    <Compile Include="Signaling\SignalingClientTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
